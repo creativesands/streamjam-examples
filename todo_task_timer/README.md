@@ -1,4 +1,4 @@
-# Todo Task Timer
+# Example: Todo Task Timer
 
 ## Features covered
 
