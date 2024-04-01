@@ -1,2 +1,1 @@
-# streamjam-examples
-Sample StreamJam Projects
+# Sample StreamJam Projects
