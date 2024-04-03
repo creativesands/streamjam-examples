@@ -32,10 +32,10 @@ class MultiplayerService(Service):
 
     async def start_game(self, pid1, pid2):
         print('* READY to start game')
-        self.dispatch('countdown', 5, recipients=[pid1, pid2])
-        for i in range(5):
+        self.dispatch('start-countdown', recipients=[pid1, pid2])
+        for i in range(6):
+            self.dispatch('countdown', 5 - i, recipients=[pid1, pid2])
             await asyncio.sleep(1)
-            self.dispatch('countdown', 4 - i, recipients=[pid1, pid2])
         
         self.dispatch('start-game', recipients=[pid1, pid2])
         

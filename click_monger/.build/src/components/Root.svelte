@@ -8,15 +8,13 @@
     export let id = "root"
 
     /* Props */
-    export let score = 0
+    export let state = "WAITING"
     export let click_counter = 0
-    export let timer = 10
     export let ready_countdown = 0
     export let current_bonus = 0
-    export let ready = false
-    export let game_over = false
+    export let timer = 10
+    export let score = 0
     export let result = false
-    export let opponent_joined = false
     export let opponent_score = 0
     export let opponent_click_counter = 0
     export let bonus_x = 0.0
@@ -26,48 +24,42 @@
     const __parentId = getContext("__parentId")
     const __hasServer = true
     const __should_create_component = __hasServer && (!__client.isRestored || !(id in __client.state))
-    const __self = __client.newComponent(id, __parentId, __should_create_component, 'Root', {score, click_counter, timer, ready_countdown, current_bonus, ready, game_over, result, opponent_joined, opponent_score, opponent_click_counter, bonus_x, bonus_y})
+    const __self = __client.newComponent(id, __parentId, __should_create_component, 'Root', {state, click_counter, ready_countdown, current_bonus, timer, score, result, opponent_score, opponent_click_counter, bonus_x, bonus_y})
     id && setContext("__parentId", id)
 
     /* Shadow Stores Init */
-    let _score
+    let _state
     let _click_counter
-    let _timer
     let _ready_countdown
     let _current_bonus
-    let _ready
-    let _game_over
+    let _timer
+    let _score
     let _result
-    let _opponent_joined
     let _opponent_score
     let _opponent_click_counter
     let _bonus_x
     let _bonus_y
 
     if (__client.state &&  id in __client.state) {
-        _score = __self.newStore('score', __client.state[id]['score'])
+        _state = __self.newStore('state', __client.state[id]['state'])
         _click_counter = __self.newStore('click_counter', __client.state[id]['click_counter'])
-        _timer = __self.newStore('timer', __client.state[id]['timer'])
         _ready_countdown = __self.newStore('ready_countdown', __client.state[id]['ready_countdown'])
         _current_bonus = __self.newStore('current_bonus', __client.state[id]['current_bonus'])
-        _ready = __self.newStore('ready', __client.state[id]['ready'])
-        _game_over = __self.newStore('game_over', __client.state[id]['game_over'])
+        _timer = __self.newStore('timer', __client.state[id]['timer'])
+        _score = __self.newStore('score', __client.state[id]['score'])
         _result = __self.newStore('result', __client.state[id]['result'])
-        _opponent_joined = __self.newStore('opponent_joined', __client.state[id]['opponent_joined'])
         _opponent_score = __self.newStore('opponent_score', __client.state[id]['opponent_score'])
         _opponent_click_counter = __self.newStore('opponent_click_counter', __client.state[id]['opponent_click_counter'])
         _bonus_x = __self.newStore('bonus_x', __client.state[id]['bonus_x'])
         _bonus_y = __self.newStore('bonus_y', __client.state[id]['bonus_y'])
     } else {
-        _score = __self.newStore('score', score)
+        _state = __self.newStore('state', state)
         _click_counter = __self.newStore('click_counter', click_counter)
-        _timer = __self.newStore('timer', timer)
         _ready_countdown = __self.newStore('ready_countdown', ready_countdown)
         _current_bonus = __self.newStore('current_bonus', current_bonus)
-        _ready = __self.newStore('ready', ready)
-        _game_over = __self.newStore('game_over', game_over)
+        _timer = __self.newStore('timer', timer)
+        _score = __self.newStore('score', score)
         _result = __self.newStore('result', result)
-        _opponent_joined = __self.newStore('opponent_joined', opponent_joined)
         _opponent_score = __self.newStore('opponent_score', opponent_score)
         _opponent_click_counter = __self.newStore('opponent_click_counter', opponent_click_counter)
         _bonus_x = __self.newStore('bonus_x', bonus_x)
@@ -75,30 +67,26 @@
     }
 
     /* Shadow Stores Reactive Get */
-    $: score = $_score
+    $: state = $_state
     $: click_counter = $_click_counter
-    $: timer = $_timer
     $: ready_countdown = $_ready_countdown
     $: current_bonus = $_current_bonus
-    $: ready = $_ready
-    $: game_over = $_game_over
+    $: timer = $_timer
+    $: score = $_score
     $: result = $_result
-    $: opponent_joined = $_opponent_joined
     $: opponent_score = $_opponent_score
     $: opponent_click_counter = $_opponent_click_counter
     $: bonus_x = $_bonus_x
     $: bonus_y = $_bonus_y
 
     /* Shadow Stores Reactive Set */
-    $: if ($_score !== score) _score.set(score)
+    $: if ($_state !== state) _state.set(state)
     $: if ($_click_counter !== click_counter) _click_counter.set(click_counter)
-    $: if ($_timer !== timer) _timer.set(timer)
     $: if ($_ready_countdown !== ready_countdown) _ready_countdown.set(ready_countdown)
     $: if ($_current_bonus !== current_bonus) _current_bonus.set(current_bonus)
-    $: if ($_ready !== ready) _ready.set(ready)
-    $: if ($_game_over !== game_over) _game_over.set(game_over)
+    $: if ($_timer !== timer) _timer.set(timer)
+    $: if ($_score !== score) _score.set(score)
     $: if ($_result !== result) _result.set(result)
-    $: if ($_opponent_joined !== opponent_joined) _opponent_joined.set(opponent_joined)
     $: if ($_opponent_score !== opponent_score) _opponent_score.set(opponent_score)
     $: if ($_opponent_click_counter !== opponent_click_counter) _opponent_click_counter.set(opponent_click_counter)
     $: if ($_bonus_x !== bonus_x) _bonus_x.set(bonus_x)
@@ -108,6 +96,7 @@
     const multiplayer_service = __self.proxyRPC('multiplayer_service')
     const handle_click = __self.proxyRPC('handle_click')
     const handle_bonus_click = __self.proxyRPC('handle_bonus_click')
+    const new_game = __self.proxyRPC('new_game')
 
     /* Destroy Component */
     __onDestroy(() => {
@@ -123,12 +112,14 @@
             <h1 class="logo"><span class="logo-click">Click</span><span class="logo-monger">Monger</span></h1>
 
             <div class="header">
-                {#if !ready && ready_countdown == 0}
+                {#if state === 'WAITING'}
                     <div class="message">Waiting for an opponent to join...</div>
-                {:else if !ready && ready_countdown > 0}
+                {:else if state === 'COUNTDOWN'}
                     <div class="message">Prepare for your Click Battle!</div>
-                {:else}
+                {:else if state === 'PLAYING'}
                     <div class="timer">00:{String(timer).padStart(2, '0')}</div>
+                {:else if state === 'FINISHED'}
+                    <div class="message">Game Over. <button on:click={new_game}>New Match</button></div>
                 {/if}
             </div>
 
@@ -151,12 +142,12 @@
                 </div>
             </div>
 
-            <button class="click-pad" disabled={!ready} on:click={handle_click}>
-                {#if ready_countdown >= 1}
+            <button class="click-pad" disabled={state !== 'PLAYING'} on:click={handle_click}>
+                {#if state === 'COUNTDOWN'}
                     <div class="countdown">
                         <p>{ready_countdown}</p>
                     </div>
-                {:else if game_over}
+                {:else if state === 'FINISHED'}
                     <span>You {result ? 'Won! 😎' : 'Lost! 🙄'}</span>
                 {:else}
                     <div class="tap">TAP</div>

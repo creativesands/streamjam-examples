@@ -1,23 +1,20 @@
 import asyncio
+from typing import Literal
 from streamjam import Component, ServiceClient, ServiceEvent
 
 from .services import MultiplayerService
 
 
 class Root(Component):
-    score: int = 0
+    state: Literal["WAITING", "COUNTDOWN", "PLAYING", "FINISHED"] = "WAITING"
     click_counter: int = 0
-    timer: int = 10
     ready_countdown: int = 0
     current_bonus: int = 0
-    ready: bool = False
-    game_over: bool = False
+    timer: int = 10
+    score: int = 0
     result: bool = False
-
-    opponent_joined: bool = False
     opponent_score: int = 0
     opponent_click_counter: int = 0
-
     bonus_x: float = 0.0
     bonus_y: float = 0.0
 
@@ -29,12 +26,14 @@ class Root(Component):
             <h1 class="logo"><span class="logo-click">Click</span><span class="logo-monger">Monger</span></h1>
 
             <div class="header">
-                {#if !ready && ready_countdown == 0}
+                {#if state === 'WAITING'}
                     <div class="message">Waiting for an opponent to join...</div>
-                {:else if !ready && ready_countdown > 0}
+                {:else if state === 'COUNTDOWN'}
                     <div class="message">Prepare for your Click Battle!</div>
-                {:else}
+                {:else if state === 'PLAYING'}
                     <div class="timer">00:{String(timer).padStart(2, '0')}</div>
+                {:else if state === 'FINISHED'}
+                    <div class="message">Game Over. <button on:click={new_game}>New Match</button></div>
                 {/if}
             </div>
 
@@ -57,12 +56,12 @@ class Root(Component):
                 </div>
             </div>
 
-            <button class="click-pad" disabled={!ready} on:click={handle_click}>
-                {#if ready_countdown >= 1}
+            <button class="click-pad" disabled={state !== 'PLAYING'} on:click={handle_click}>
+                {#if state === 'COUNTDOWN'}
                     <div class="countdown">
                         <p>{ready_countdown}</p>
                     </div>
-                {:else if game_over}
+                {:else if state === 'FINISHED'}
                     <span>You {result ? 'Won! 😎' : 'Lost! 🙄'}</span>
                 {:else}
                     <div class="tap">TAP</div>
@@ -302,14 +301,27 @@ class Root(Component):
         await self.multiplayer_service.update_score(self.pid, self.current_bonus)
         self.current_bonus -= 1
 
+    @Component.rpc
+    async def new_game(self, e):
+        self.score = 0
+        self.opponent_score = 0
+        self.click_counter = 0
+        self.state = 'WAITING'
+        self.timer = 10
+        await self.multiplayer_service.join_game(self.pid)
+
     @multiplayer_service.on_event('countdown')
     async def update_countdown_ready(self, e: ServiceEvent):
         self.ready_countdown = e.data
+
+    @multiplayer_service.on_event('start-countdown')
+    async def start_countdown(self, e: ServiceEvent):
+        self.state = "COUNTDOWN"
     
     @multiplayer_service.on_event('start-game')
     async def start_timer(self, e: ServiceEvent):
         print(self.pid, 'starting game')
-        self.ready = True
+        self.state = "PLAYING"
         self.timer_task = asyncio.create_task(self.update_timer())
 
     @multiplayer_service.on_event('start-bonus')
@@ -327,15 +339,13 @@ class Root(Component):
 
     @multiplayer_service.on_event('end-game')
     async def announce_result(self, e: ServiceEvent):
-        self.ready = False
-        self.game_over = True
+        self.state = "FINISHED"
         self.result = e.data
 
     async def update_timer(self):
         for _ in range(10):
             await asyncio.sleep(1)
             self.timer -= 1
-        self.ready = False
-        if not self.game_over:
-            self.game_over = True
-            self.result = self.score > self.opponent_score
+        self.state = "FINISHED"
+        self.result = self.score > self.opponent_score
+    
