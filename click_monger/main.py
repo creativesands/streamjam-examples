@@ -8,7 +8,8 @@ app = StreamJam(
     services={
         'SocketService': CustomSocketService.configure(),
         'MultiplayerService': MultiplayerService.configure()
-    }
+    },
+    host='0.0.0.0'
 )
 
 
