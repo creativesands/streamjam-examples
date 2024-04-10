@@ -1,7 +1,7 @@
 from streamjam import Component, ServiceClient, ComponentEvent, ServiceEvent
 
 from .button import Button
-from .services import CounterService
+from ..services.counter import CounterService
 
 
 class Root(Component):

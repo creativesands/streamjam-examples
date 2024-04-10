@@ -1,7 +1,8 @@
 import asyncio
 from streamjam import StreamJam
 
-from .components.services import CustomSocketService, CounterService
+from .services.counter import CounterService
+from .services.socket import CustomSocketService
 
 
 app = StreamJam(
