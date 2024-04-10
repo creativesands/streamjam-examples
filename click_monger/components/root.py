@@ -2,7 +2,7 @@ import asyncio
 from typing import Literal
 from streamjam import Component, ServiceClient, ServiceEvent
 
-from .services import MultiplayerService
+from ..services.multiplayer import MultiplayerService
 
 
 class Root(Component):

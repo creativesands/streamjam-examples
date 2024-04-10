@@ -1,7 +1,8 @@
 import asyncio
 from streamjam import StreamJam
 
-from .components.services import CustomSocketService, MultiplayerService
+from .services.socket import CustomSocketService
+from .services.multiplayer import MultiplayerService
 
 app = StreamJam(
     name="click_monger",

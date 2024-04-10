@@ -1,14 +1,7 @@
 import random
 import asyncio
-import websockets
+from streamjam import Service
 from collections import defaultdict
-from streamjam import Service, SocketService
-
-
-class CustomSocketService(SocketService):
-    async def on_connect(self, ws: websockets.WebSocketServerProtocol) -> str:
-        print('Accepting connection on:', ws.path)
-        return ws.path
     
 
 class MultiplayerService(Service):
